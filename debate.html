@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Debate{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div id="chat-box" class="chat-box"></div>
+    <div class="input-container">
+        <textarea id="user1-input" class="chat-input" placeholder="User 1, type your message here..."></textarea>
+        <button id="user1-send" class="send-button">Send</button>
+    </div>
+    <div class="input-container">
+        <textarea id="user2-input" class="chat-input" placeholder="User 2, type your message here..."></textarea>
+        <button id="user2-send" class="send-button">Send</button>
+    </div>
+</div>
+<script>
+    document.getElementById('user1-send').addEventListener('click', function() {
+        sendMessage('user1');
+    });
+    document.getElementById('user2-send').addEventListener('click', function() {
+        sendMessage('user2');
+    });
+
+    document.getElementById('user1-input').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage('user1');
+        }
+    });
+
+    document.getElementById('user2-input').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage('user2');
+        }
+    });
+
+    async function sendMessage(user) {
+        const inputElement = document.getElementById(user + '-input');
+        const message = inputElement.value.trim();
+        if (message === '') return;
+
+        // Add the message to the chat box
+        const chatBox = document.getElementById('chat-box');
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message ' + user;
+        userMessage.textContent = message;
+        chatBox.appendChild(userMessage);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Send message to the server for fact-checking
+        const response = await fetch('/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: message })
+        });
+        const data = await response.json();
+
+        // Add the response to the chat box if there's a correction
+        if (data.response) {
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message neutral';
+            botMessage.textContent = data.response;
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Clear the input field
+        inputElement.value = '';
+    }
+</script>
+{% endblock %}
